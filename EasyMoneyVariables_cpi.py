@@ -42,13 +42,14 @@ response_data = response.json()
 cpi_value = response_data["Results"]["series"][0]["data"][0]["value"]
 
 # create a document to insert into the collection
-cpi_data = {
+data_cpi = {
     "date": datetime(year, month, 1),
     "cpi": float(cpi_value),
 }
 
 # insert the document into the collection
-cpi_collection.insert_one(cpi_data)
+cpi_collection.insert_one(data_cpi)
 
 # print a message to confirm insertion
 print("Data inserted successfully!")
+
