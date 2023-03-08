@@ -59,41 +59,41 @@ response_stock = requests.get(url_stock)
 data_stock = json.loads(response_stock.text)['Time Series (5min)']
 
 # Iterate over data and insert each record into MongoDB for stock data
-for date, prices in data_stock.items():
+for date, data_prices in data_stock.items():
     date_time = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-    prices['date'] = date_time
-    prices['symbol'] = symbol
-    stockcol.insert_one(prices)
+    data_prices['date'] = date_time
+    data_prices['symbol'] = symbol
+    stockcol.insert_one(data_prices)
 
 # Make API request and parse response JSON for balance sheet data
 response_balance = requests.get(url_balance_sheet)
-data_balance = json.loads(response_balance.text)['annualReports'][0]
+data_bs = json.loads(response_balance.text)['annualReports'][0]
 
 # Insert balance sheet data into database
-data_balance['symbol'] = symbol
-data_balance['date'] = datetime.now()
-balancecol.insert_one(data_balance)
+data_bs['symbol'] = symbol
+data_bs['date'] = datetime.now()
+balancecol.insert_one(data_bs)
 
 # Define Alpha Vantage API endpoint and parameters for financial statements
 fs_url = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
 
 # Make API request for financial statements and parse response JSON
 fs_response = requests.get(fs_url)
-fs_data = json.loads(fs_response.text)
+data_fs = json.loads(fs_response.text)
 
 # Insert financial statements data into MongoDB
-fs_data['symbol'] = symbol
-fs_data['date'] = datetime.now()
-financialcol.insert_one(fs_data)
+data_fs['symbol'] = symbol
+data_fs['date'] = datetime.now()
+financialcol.insert_one(data_fs)
 
 # Define Alpha Vantage API endpoint and parameters for PE ratio
 pe_url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={api_key}'
 
 # Make API request for PE ratio and parse response JSON
 pe_response = requests.get(pe_url)
-pe_data = json.loads(pe_response.text)
+data_pe = json.loads(pe_response.text)
 
 # Insert PE ratio data into MongoDB
-pe_data['symbol'] = symbol
-pe_data['date'] = datetime.now()
-pecol.insert_one(pe_data)
+data_pe['symbol'] = symbol
+data_pe['date'] = datetime.now()
+pecol.insert_one(data_pe)
