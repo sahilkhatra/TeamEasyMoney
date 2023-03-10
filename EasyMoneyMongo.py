@@ -48,7 +48,7 @@ if args.username and args.password and args.email:
     print("Registration successful.")
 
 # Define Alpha Vantage API endpoints and parameters
-api_key = 'OT31A9F95WIFCEXS'
+api_key = 'YOUR-API-KEY-HERE'
 symbol = 'GOOGL'
 interval = '5min'
 url_stock = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval={interval}&apikey={api_key}'
