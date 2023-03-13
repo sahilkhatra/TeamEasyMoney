@@ -26,6 +26,24 @@ unemploymentcol = mydb["UnemploymentRate"]
 # Collection for PE Ratio
 pecol = mydb["PERatio"]
 
+# Collection for CPI
+cpi_collection = mydb["cpi_collection"]
+
+# Collection PPI
+ppi_collection = mydb["ppi_collection"]
+
+# Collection for IPI
+ipi_collection = mydb["ipi_collection"]
+
+# Collection for Fed Funds Rate
+fedir_collection = mydb["fed_interest_rate"]
+
+# Collection for GDP
+gdp_collection = mydb["real_gdp"]
+
+# Collection for Unemployment Rate
+ur_collection = mydb["ur_collection"]
+
 # Parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--username", help="Username for registration")
@@ -48,7 +66,7 @@ if args.username and args.password and args.email:
     print("Registration successful.")
 
 # Define Alpha Vantage API endpoints and parameters
-api_key = 'YOUR-API-KEY-HERE'
+api_key = '<YOUR-KEY-HERE>'
 symbol = 'GOOGL'
 interval = '5min'
 url_stock = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval={interval}&apikey={api_key}'
@@ -97,3 +115,260 @@ data_pe = json.loads(pe_response.text)
 data_pe['symbol'] = symbol
 data_pe['date'] = datetime.now()
 pecol.insert_one(data_pe)
+
+# -------------------- CPI LOGIC -----------------------
+
+# set the BLS API endpoint URL
+url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+
+# set the series ID for the CPI-U index (all items)
+series_id = "CUUR0000SA0"
+
+# get the current year and month
+now = datetime.now()
+year = now.year
+month = now.month
+
+# set the API request headers
+headers = {"Content-Type": "application/json"}
+
+# set the API request data
+data = {
+    "seriesid": [series_id],
+    "startyear": str(year),
+    "endyear": str(year),
+    "startmonth": f"{month:02d}",
+    "endmonth": f"{month:02d}",
+}
+
+# send the API request and retrieve the data
+response = requests.post(url, headers=headers, json=data)
+response_data = response.json()
+
+# extract the CPI value from the response data
+cpi_value = response_data["Results"]["series"][0]["data"][0]["value"]
+
+# create a document to insert into the collection
+data_cpi = {
+    "date": datetime(year, month, 1),
+    "cpi": float(cpi_value),
+}
+
+# insert the document into the collection
+cpi_collection.insert_one(data_cpi)
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# -------------- PPI LOGIC --------------------
+
+# set the BLS API endpoint URL
+url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+
+# set the series ID for the PPI (Producer Price Index)
+series_id = "PCU22112222112241"
+
+# get the current year and month
+now = datetime.now()
+year = now.year
+month = now.month
+
+# set the API request headers
+headers = {"Content-Type": "application/json"}
+
+# set the API request data
+data = {
+    "seriesid": [series_id],
+    "startyear": str(year),
+    "endyear": str(year),
+    "startmonth": f"{month:02d}",
+    "endmonth": f"{month:02d}",
+}
+
+# send the API request and retrieve the data
+response = requests.post(url, headers=headers, json=data)
+response_data = response.json()
+
+# extract the PPI value from the response data
+ppi_value = response_data["Results"]["series"][0]["data"][0]["value"]
+
+# create a document to insert into the collection
+data_ppi = {
+    "date": datetime(year, month, 1),
+    "ppi": float(ppi_value),
+}
+
+# insert the document into the collection
+ppi_collection.insert_one(data_ppi)
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# retrieve the latest PPI data from the collection
+latest_ppi_data = ppi_collection.find().sort("date", -1).limit(1)[0]
+print(f"Latest PPI value (as of {latest_ppi_data['date']:%Y-%m-%d}): {latest_ppi_data['ppi']}")
+
+# ---------------- UR LOGIC ---------------------
+
+# set the BLS API endpoint URL
+url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+
+# set the series ID for the unemployment rate
+series_id = "LNS14000000"
+
+# get the current year and month
+now = datetime.now()
+year = now.year
+month = now.month
+
+# set the API request headers
+headers = {"Content-Type": "application/json"}
+
+# set the API request data
+data = {
+    "seriesid": [series_id],
+    "startyear": str(year),
+    "endyear": str(year),
+    "startperiod": f"M{month}",
+    "endperiod": f"M{month}",
+}
+
+# send the API request and retrieve the data
+response = requests.post(url, headers=headers, json=data)
+response_data = response.json()
+
+# extract the unemployment rate value from the response data and convert to decimal
+ur_value = float(response_data["Results"]["series"][0]["data"][0]["value"]) / 100
+
+# create a document to insert into the collection
+data_ur = {
+    "date": datetime(year, month, 1),
+    "ur": ur_value,
+}
+
+# insert the document into the collection
+ur_collection.insert_one(data_ur)
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# retrieve the latest unemployment rate data from the collection
+latest_ur_data = ur_collection.find().sort("date", -1).limit(1)[0]
+print(f"Latest unemployment rate (as of {latest_ur_data['date']:%Y-%m-%d}): {latest_ur_data['ur']}%")
+
+# --------------- FEDIR LOGIC --------------------
+
+# set the Alpha Vantage API endpoint URL
+url = "https://www.alphavantage.co/query"
+
+# set the API request parameters
+# KIM THIS IS FOR ALPHA VANTAGE
+params = {
+    "function": "FEDERAL_FUNDS_RATE",
+    "apikey": "<YOUR-KEY-HERE>",
+}
+
+# send the API request and retrieve the data
+response = requests.get(url, params=params)
+response_data = response.json()
+
+# print the entire response
+print(response_data)
+
+# extract the latest monthly interest rate value from the response data
+data = response_data["data"]
+latest_month = data[0]["date"][:-3]
+interest_rate = float(data[0]["value"])
+
+# insert the latest monthly interest rate into the collection
+fedir_collection.insert_one({
+    "date": latest_month,
+    "rate": interest_rate,
+})
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# retrieve the latest interest rate data from the collection
+latest_interest_rate = fedir_collection.find().sort("date", -1).limit(1)[0]
+print(f"Latest interest rate (as of {latest_interest_rate['date']}): {latest_interest_rate['rate']}%")
+
+# ------------------ IPI LOGIC ----------------------
+
+# set the BLS API endpoint URL
+url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+
+# set the series ID for the Industrial Production Index
+series_id = "EIUIR"
+
+# set the API request data
+# KIM THIS IS FOR BLS API
+data = {
+    "seriesid": [series_id],
+    "startyear": "2022",
+    "endyear": "2023",
+    "registrationkey": "<YOUR-KEY-HERE>"
+}
+
+# send the API request and retrieve the data
+response = requests.post(url, json=data)
+response_data = response.json()
+
+# extract the IPI values from the response data
+ipi_values = []
+for series in response_data["Results"]["series"]:
+    for data_point in series["data"]:
+        date = datetime.strptime(data_point["periodName"] + data_point["year"], "%B%Y")
+        value = float(data_point["value"])
+        ipi_values.append({
+            "date": date,
+            "value": value
+        })
+
+# insert the data into the collection
+ipi_collection.insert_many(ipi_values)
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# retrieve the latest IPI data from the collection
+latest_ipi_data = ipi_collection.find().sort("date", -1).limit(1)[0]
+print(f"Latest IPI (as of {latest_ipi_data['date']:%B %Y}): {latest_ipi_data['value']}")
+
+# -------------------- GDP LOGIC ------------------------
+
+# set the Alpha Vantage API endpoint URL
+url = "https://www.alphavantage.co/query"
+
+# set the API request parameters
+# KIM THIS IS FOR ALPHA VANTAGE 
+params = {
+    "function": "FEDERAL_FUNDS_RATE",
+    "apikey": "<YOUR-KEY-HERE>",
+}
+
+# send the API request and retrieve the data
+response = requests.get(url, params=params)
+response_data = response.json()
+
+# print the entire response
+print(response_data)
+
+# extract the latest monthly interest rate value from the response data
+data = response_data["data"]
+latest_month = data[0]["date"][:-3]
+interest_rate = float(data[0]["value"])
+
+# insert the latest monthly interest rate into the collection
+gdp_collection.insert_one({
+    "date": latest_month,
+    "rate": interest_rate,
+})
+
+# print a message to confirm insertion
+print("Data inserted successfully!")
+
+# retrieve the latest interest rate data from the collection
+latest_interest_rate = gdp_collection.find().sort("date", -1).limit(1)[0]
+print(f"Latest interest rate (as of {latest_interest_rate['date']}): {latest_interest_rate['rate']}%")
+
