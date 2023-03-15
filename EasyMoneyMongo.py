@@ -301,12 +301,18 @@ url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 # set the series ID for the Industrial Production Index
 series_id = "EIUIR"
 
-# set the API request data
-# KIM THIS IS FOR BLS API
+# get the current year and month
+now = datetime.now()
+current_year = str(now.year)
+current_month = now.strftime("%B").upper()
+
+# set the API request data to only include the most recent month
 data = {
     "seriesid": [series_id],
-    "startyear": "2022",
-    "endyear": "2023",
+    "startyear": current_year,
+    "endyear": current_year,
+    "startperiod": current_month,
+    "endperiod": current_month,
     "registrationkey": "<YOUR-KEY-HERE>"
 }
 
@@ -314,19 +320,14 @@ data = {
 response = requests.post(url, json=data)
 response_data = response.json()
 
-# extract the IPI values from the response data
-ipi_values = []
-for series in response_data["Results"]["series"]:
-    for data_point in series["data"]:
-        date = datetime.strptime(data_point["periodName"] + data_point["year"], "%B%Y")
-        value = float(data_point["value"])
-        ipi_values.append({
-            "date": date,
-            "value": value
-        })
+# extract the IPI value from the response data
+ipi_value = float(response_data["Results"]["series"][0]["data"][0]["value"])
 
 # insert the data into the collection
-ipi_collection.insert_many(ipi_values)
+ipi_collection.insert_one({
+    "date": now,
+    "value": ipi_value
+})
 
 # print a message to confirm insertion
 print("Data inserted successfully!")
@@ -334,6 +335,7 @@ print("Data inserted successfully!")
 # retrieve the latest IPI data from the collection
 latest_ipi_data = ipi_collection.find().sort("date", -1).limit(1)[0]
 print(f"Latest IPI (as of {latest_ipi_data['date']:%B %Y}): {latest_ipi_data['value']}")
+
 
 # -------------------- GDP LOGIC ------------------------
 
