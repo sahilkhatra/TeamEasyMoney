@@ -5,7 +5,7 @@ from datetime import datetime
 import argparse
 
 # Connect to MongoDB
-myclient = pymongo.MongoClient("mongodb+srv://sahilkhatra:easymoney*123@teameasymoney.8sxqmos.mongodb.net/?retryWrites=true&w=majority")
+myclient = pymongo.MongoClient("mongodb+srv://<YOUR-USER-PASS-DB>.8sxqmos.mongodb.net/?retryWrites=true&w=majority")
 mydb = myclient["TeamEasyMoney"]
 
 # Collection for User Data
