@@ -65,8 +65,10 @@ if args.username and args.password and args.email:
     x = mycol.insert_one(mydict)
     print("Registration successful.")
 
+# --------------------- GOOGLE STOCK PRICE LOGIC ---------------------
+
 # Define Alpha Vantage API endpoints and parameters
-api_key = '<YOUR-KEY-HERE>'
+api_key = 'OT31A9F95WIFCEXS'
 symbol = 'GOOGL'
 interval = '5min'
 url_stock = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval={interval}&apikey={api_key}'
@@ -83,6 +85,8 @@ for date, data_prices in data_stock.items():
     data_prices['symbol'] = symbol
     stockcol.insert_one(data_prices)
 
+# ----------------- Balance Sheet Logic ------------------------
+
 # Make API request and parse response JSON for balance sheet data
 response_balance = requests.get(url_balance_sheet)
 data_bs = json.loads(response_balance.text)['annualReports'][0]
@@ -91,6 +95,8 @@ data_bs = json.loads(response_balance.text)['annualReports'][0]
 data_bs['symbol'] = symbol
 data_bs['date'] = datetime.now()
 balancecol.insert_one(data_bs)
+
+# ---------------- Financial Statements Logic ------------------
 
 # Define Alpha Vantage API endpoint and parameters for financial statements
 fs_url = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
@@ -103,6 +109,8 @@ data_fs = json.loads(fs_response.text)
 data_fs['symbol'] = symbol
 data_fs['date'] = datetime.now()
 financialcol.insert_one(data_fs)
+
+# ------------------ Logic for PE, EPS, etc ---------------------
 
 # Define Alpha Vantage API endpoint and parameters for PE ratio
 pe_url = f'https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={api_key}'
